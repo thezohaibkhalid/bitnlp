@@ -16,14 +16,17 @@
         /* Custom Scrollbar */
         .scrollable {
             overflow-y: auto;
-            max-height: 400px; /* Desktop max height */
+            max-height: 800px; /* Desktop max height */
+            
         }
         .scrollable::-webkit-scrollbar {
             width: 5px;
+            
         }
         .scrollable::-webkit-scrollbar-thumb {
             background: #6c7075; /* Color of the scrollbar thumb */
             border-radius: 4px;
+            height: 5px;
         }
         .scrollable::-webkit-scrollbar-track {
             background: #F0F0F0; /* Color of the scrollbar track */
@@ -254,7 +257,7 @@
             const sentenceList = document.getElementById('sentence-list');
             sentences.forEach(sentence => {
                 const listItem = document.createElement('li');
-                listItem.className = 'flex justify-between items-center';
+                listItem.className = 'flex justify-between items-center m-2';
                 listItem.innerHTML = `
                     <span>${sentence}</span>
                     <div class="relative">
