@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Processing App</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        /* Custom Scrollbar */
+        .scrollable {
+            overflow-y: auto;
+            max-height: 400px; /* Desktop max height */
+        }
+        .scrollable::-webkit-scrollbar {
+            width: 5px;
+        }
+        .scrollable::-webkit-scrollbar-thumb {
+            background: #6c7075; /* Color of the scrollbar thumb */
+            border-radius: 4px;
+        }
+        .scrollable::-webkit-scrollbar-track {
+            background: #F0F0F0; /* Color of the scrollbar track */
+        }
+        /* Mobile specific styles */
+        @media (max-width: 768px) {
+            .scrollable {
+                max-height: 200px; /* Fixed height for mobile */
+            }
+        }
+        /* Pop-up notification styling */
+        .notification {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            background-color: #4CAF50; /* Green background */
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            display: none; /* Hidden by default */
+            transition: opacity 0.5s;
+            opacity: 0;
+        }
+        /* Tooltip styling */
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.75);
+            color: white;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            display: none; /* Hidden by default */
+            white-space: nowrap;
+            z-index: 10; /* Ensure it's above other elements */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-5">
+
+    <!-- Branding / Copyright -->
+    <div class="text-center py-4">
+        <h1 class="text-2xl font-semibold text-blue-600">BitBuilder Productions</h1>
+        <p class="text-sm text-gray-500">© 2024 All Rights Reserved</p>
+    </div>
+
+    <!-- Main Container -->
+    <div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-md lg:flex lg:space-x-6">
+
+        <!-- Predefined Sentences Box -->
+        <div class="bg-gray-50 border border-gray-300 rounded-lg p-4 mb-6 lg:w-1/3 lg:mb-0">
+            <h2 class="text-xl font-semibold mb-4 text-blue-600">Predefined Sentences:</h2>
+            <ul id="sentence-list" class="text-gray-700 space-y-3 scrollable">
+                <!-- Sentences will be dynamically added here -->
+            </ul>
+        </div>
+        
+        <!-- Right Side: Form and Output -->
+        <div class="lg:w-2/3">
+
+            <!-- Download Button
+            <form action="/download_text" method="POST" class="mb-4">
+                <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-500 focus:outline-none">
+                    Download Sentences as Text File
+                </button>
+            </form> -->
+
+            <!-- Textarea and Operations Form -->
+            <form method="POST" action="/process">
+                <textarea name="input_text" placeholder="Enter your text here..." class="w-full p-4 border border-gray-300 rounded-lg mb-4 h-32"></textarea>
+
+                <h4 class="text-lg font-semibold mb-2 text-blue-600">Select Operations:</h4>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <label class="flex items-center"><input type="checkbox" name="operations" value="tokenization" class="mr-2"> Tokenization</label>
+                    <label class="flex items-center"><input type="checkbox" name="operations" value="segmentation" class="mr-2"> Segmentation</label>
+                    <label class="flex items-center"><input type="checkbox" name="operations" value="lowercasing" class="mr-2"> Lowercasing</label>
+                    <label class="flex items-center"><input type="checkbox" name="operations" value="stopword_removal" class="mr-2"> Stop Word Removal</label>
+                    <label class="flex items-center"><input type="checkbox" name="operations" value="remove_digits_punct" class="mr-2"> Remove Digits & Punctuation</label>
+                    <label class="flex items-center"><input type="checkbox" name="operations" value="stemming" class="mr-2"> Stemming</label>
+                    <label class="flex items-center"><input type="checkbox" name="operations" value="lemmatization" class="mr-2"> Lemmatization</label>
+                    <label class="flex items-center"><input type="checkbox" name="operations" value="pos_tagging" class="mr-2"> POS Tagging</label>
+                    <label class="flex items-center"><input type="checkbox" name="operations" value="parse_tree" class="mr-2"> Parse Tree</label>
+                </div>
+
+                <button type="submit" class="mt-6 bg-green-600 text-white py-2 px-6 rounded hover:bg-green-500 focus:outline-none">
+                    Process Text
+                </button>
+            </form>
+
+            <!-- Display result -->
+            <div class="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm overflow-x-auto relative">
+                <h4 class="text-lg font-semibold mb-2 text-blue-600">Processing Result:</h4>
+                <div class="flex items-center">
+                    <pre id="result-text" class="text-gray-700 whitespace-pre-wrap break-words flex-grow">{{ result if result else "No results to display." }}</pre>
+                    {% if result %}
+                    <div class="absolute top-0 right-0 mt-2 mr-3">
+                        <button onclick="copyToClipboard(`{{ result }}`)" onmouseover="showTooltip(event)" onmouseout="hideTooltip(event)" class="text-blue-500 hover:text-blue-700">
+                            <i class="fa-solid fa-copy"></i>
+                        </button>
+                        <div class="tooltip" id="tooltip">Copy</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if result %}
+                <form action="/download" method="POST" class="mt-4">
+                    <input type="hidden" name="result" value="{{ result }}">
+                    <button type="submit" class="bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-500 focus:outline-none">
+                        Download PDF
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+
+<!-- Display Parse Tree -->
+{% if parse_tree_image %}
+<div class="mt-8 text-center">
+    <h4 class="text-lg font-semibold mb-2 text-blue-600">Parse Tree:</h4>
+    <img src="{{ parse_tree_image }}.png" alt="Parse Tree" class="inline-block max-w-full h-auto border border-gray-300 rounded-lg">
+    <form action="/download_parse_tree" method="GET" class="mt-4">
+        <input type="hidden" name="path" value="{{ parse_tree_image }}.png">
+        <button type="submit" class="bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-500 focus:outline-none">
+            Download Parse Tree
+        </button>
+    </form>
+</div>
+{% endif %}
+
+        </div>
+    </div>
+
+
+    <!-- <footer class=" text-gray-800 py-6 mt-8 shadow-lg">
+        <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
+            <div>
+                <h2 class="text-lg font-semibold">Contact Us</h2>
+                <p class="text-sm">We'd love to hear from you!</p>
+            </div>
+            <div class="flex space-x-4">
+                <a href="mailto:zohaibkhalid.pk@gmail.com" class="bg-blue-600 hover:bg-blue-500 text-white py-2 px-4 rounded transition duration-300">
+                    Email Us
+                </a>
+                <a href="https://www.linkedin.com/in/yourprofile" target="_blank" class="text-blue-600 hover:text-blue-500 transition duration-300">
+                    <i class="fab fa-linkedin fa-lg"></i>
+                </a>
+                <a href="https://twitter.com/yourprofile" target="_blank" class="text-blue-600 hover:text-blue-500 transition duration-300">
+                    <i class="fab fa-twitter fa-lg"></i>
+                </a>
+                <a href="https://github.com/yourprofile" target="_blank" class="text-blue-600 hover:text-blue-500 transition duration-300">
+                    <i class="fab fa-github fa-lg"></i>
+                </a>
+            </div>
+        </div>
+        <div class="text-center mt-4">
+            <p class="text-sm">© 2024 BitBuilder Productions. All Rights Reserved.</p>
+        </div>
+    </footer> -->
+
+    <!-- Notification -->
+    <div id="notification" class="notification">Copied!</div>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const notification = document.getElementById('notification');
+                notification.style.display = 'block';
+                notification.style.opacity = '1';
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        notification.style.display = 'none';
+                    }, 500);
+                }, 1500);
+            }).catch(err => {
+                console.error('Could not copy text: ', err);
+            });
+        }
+
+        function showTooltip(event) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.display = 'block';
+            const button = event.target;
+            const rect = button.getBoundingClientRect();
+            tooltip.style.left = `${rect.left + window.scrollX}px`;
+            tooltip.style.top = `${rect.top + window.scrollY - tooltip.offsetHeight - 5}px`; // Position above the button
+        }
+
+        function hideTooltip(event) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.display = 'none';
+        }
+
+        // Array of predefined sentences
+        const sentences = [
+            "The dog chases a cat",
+            "A girl sees a dog quickly",
+            "The cat finds a treat in the park",
+            "A boy gives a dog a treat",
+            "The dog takes a treat with the girl",
+            "A cat chases a girl in the park",
+            "The girl sees a boy happily",
+            "A dog finds a treat with the cat",
+            "The boy chases a cat silently",
+            "A girl gives a dog a treat at the park",
+            "The cat takes a treat quickly",
+            "A boy sees a cat in the park",
+            "The dog chases a girl with a treat",
+            "A girl finds a dog at the park",
+            "The cat gives a treat to a boy",
+            "A dog runs quickly to the park",
+            "The girl silently sees a dog",
+            "The boy happily gives a treat to the cat",
+            "A cat runs with a dog in the park",
+            "The dog finds a girl with a treat",
+            "The boy chases a dog happily",
+            "A cat gives a boy a treat",
+            "The girl finds a cat in the park quickly",
+            "A dog sees a girl at the park",
+            "The cat silently takes a treat",
+            "A girl happily chases a dog",
+            "The dog runs to a boy with a treat",
+            "The boy sees a cat in the park silently",
+            "A girl gives a treat to a dog quickly",
+            "The cat chases a girl happily in the park"
+        ];
+
+        // Function to display sentences in the HTML
+        function displaySentences() {
+            const sentenceList = document.getElementById('sentence-list');
+            sentences.forEach(sentence => {
+                const listItem = document.createElement('li');
+                listItem.className = 'flex justify-between items-center';
+                listItem.innerHTML = `
+                    <span>${sentence}</span>
+                    <div class="relative">
+                        <button onclick="copyToClipboard('${sentence}')" onmouseover="showTooltip(event)" onmouseout="hideTooltip(event)" class="ml-3 text-blue-500 hover:text-blue-700">
+                            <i class="fa-solid fa-copy"></i>
+                        </button>
+                        <div class="tooltip">Copy</div>
+                    </div>
+                `;
+                sentenceList.appendChild(listItem);
+            });
+        }
+
+        // Call the function to display sentences when the page loads
+        window.onload = displaySentences;
+    </script>
+</body>
+</html>
