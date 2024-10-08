@@ -10,6 +10,7 @@ from reportlab.lib import colors
 from nltk.tree import Tree
 import graphviz
 import os
+from sklearn.feature_extraction.text import CountVectorizer
 
 # Download required NLTK resources
 nltk.download('punkt')
@@ -68,7 +69,7 @@ def index():
     return render_template('index.html', result="", parse_tree_image=None)
 
 
-# Route for processing text
+## Route for processing text
 @app.route('/process', methods=['POST'])
 def process():
     input_text = request.form['input_text']
@@ -116,6 +117,29 @@ def process():
         pos_tags = [f"{token.text} ({token.pos_})" for token in doc]
         result += "POS Tagging:\n" + "\n".join(pos_tags) + "\n\n"
 
+    if 'bag_of_words' in operations:
+        # Stop word removal and Bag of Words generation
+        filtered_tokens = [token.text for token in doc if not token.is_stop and not token.is_punct]
+        
+        # Create Bag of Words using the filtered tokens
+        vectorizer = CountVectorizer()
+        X = vectorizer.fit_transform([" ".join(filtered_tokens)])  # Join tokens back into a single string
+        
+        # Handling versions of scikit-learn
+        try:
+            words = vectorizer.get_feature_names_out()  # Newer versions
+        except AttributeError:
+            words = vectorizer.get_feature_names()  # For older versions
+
+        vector = X.toarray().flatten()
+
+        result += "Bag of Words:\n"
+        for word, count in zip(words, vector):
+            result += f"{word}: {count}\n"
+
+        result += "\nBag of Words Vector Representation:\n"
+        result += str(vector) + "\n\n"
+
     if 'parse_tree' in operations:
         sentence = input_text.split()
         try:
@@ -131,7 +155,7 @@ def process():
                     for child in tree:
                         if isinstance(child, Tree):
                             add_edges(child)
-                            dot.edge(str(tree), str(child))
+                    ''        dot.edge(str(tree), str(child))
                         else:
                             dot.node(str(child), str(child))
                             dot.edge(str(tree), str(child))
@@ -146,8 +170,9 @@ def process():
         except Exception as e:
             result += f"Parse Error: {e}\n\n"
 
-    # Render the result and parse tree image directly
+    # Return the result properly indented within the process function
     return render_template('index.html', result=result, parse_tree_image=parse_tree_image_path if 'parse_tree' in operations else None)
+
 # Route for generating PDF and downloading
 @app.route('/download', methods=['POST'])
 def download_pdf():
