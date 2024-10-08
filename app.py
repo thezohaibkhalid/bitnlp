@@ -155,7 +155,7 @@ def process():
                     for child in tree:
                         if isinstance(child, Tree):
                             add_edges(child)
-                    ''        dot.edge(str(tree), str(child))
+                            dot.edge(str(tree), str(child))
                         else:
                             dot.node(str(child), str(child))
                             dot.edge(str(tree), str(child))
