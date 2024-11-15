@@ -108,11 +108,12 @@ dense_tfidf = tfidf_matrix.todense()
 tfidf_array = np.array(dense_tfidf)
 
 for i in range(tfidf_array.shape[0]):
-    print(f"Document {i + 1}:")
+    print(f"Document {i + 1}:")   
     for j in range(tfidf_array.shape[1]):
         if tfidf_array[i][j] > 0:
             print(f" - {feature_names[j]}: {tfidf_array[i][j]}")
 print("\n" + "-"*40 + "\n")
+
 
 # Program 12: Parse Tree Visualization (For Jupyter Notebooks or Streamlit Apps)
 # Uncomment the next lines if running in a Jupyter notebook or Streamlit environment
@@ -120,3 +121,5 @@ print("\n" + "-"*40 + "\n")
 # doc = nlp("This is a sample sentence for parse tree.")
 # for sent in doc.sents:
 #     displacy.render(sent, style="dep", jupyter=True)
+
+# This code will run in jupyter or google collab
